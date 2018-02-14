@@ -1,25 +1,44 @@
 /**
  * External dependencies
  */
-import { includes, first, last, drop, dropRight } from 'lodash';
+import { includes } from 'lodash';
+
+/**
+ * Default options for withHistory reducer enhancer. Refer to withHistory
+ * documentation for options explanation.
+ *
+ * @see withHistory
+ *
+ * @type {Object}
+ */
+const DEFAULT_OPTIONS = {
+	resetTypes: [],
+	shouldReplacePresent: () => false,
+};
 
 /**
  * Reducer enhancer which transforms the result of the original reducer into an
  * object tracking its own history (past, present, future).
  *
- * @param {Function} reducer            Original reducer.
- * @param {?Object}  options            Optional options.
- * @param {?Array}   options.resetTypes Action types upon which to clear past.
+ * @param {Function}  reducer                      Original reducer.
+ * @param {?Object}   options                      Optional options.
+ * @param {?Array}    options.resetTypes           Action types upon which to
+ *                                                 clear past.
+ * @param {?Function} options.shouldReplacePresent Function receiving last and
+ *                                                 current actions, returning
+ *                                                 boolean indicating whether
+ *                                                 present should be merged,
+ *                                                 rather than add undo level.
  *
  * @return {Function} Enhanced reducer.
  */
-export default function withHistory( reducer, options = {} ) {
-	const initialPresent = reducer( undefined, {} );
+export default function withHistory( reducer, options ) {
+	options = { ...DEFAULT_OPTIONS, ...options };
+	const { resetTypes, shouldReplacePresent } = options;
 
 	const initialState = {
-		// Past already contains record of present since changes are buffered in present.
-		past: [ initialPresent ],
-		present: initialPresent,
+		past: [],
+		present: reducer( undefined, {} ),
 		future: [],
 	};
 
@@ -27,57 +46,36 @@ export default function withHistory( reducer, options = {} ) {
 
 	return ( state = initialState, action ) => {
 		const { past, present, future } = state;
-		const previousAction = lastAction;
-		const {
-			resetTypes = [],
-			shouldOverwriteState = () => false,
-		} = options;
 
+		const previousAction = lastAction;
 		lastAction = action;
 
 		switch ( action.type ) {
 			case 'UNDO':
-				// If there are changes in buffer, push buffer to the future.
-				if ( last( past ) !== present ) {
-					return {
-						past,
-						present: last( past ),
-						future: [ present, ...future ],
-					};
-				}
-
 				// Can't undo if no past.
-				// If the present "buffer" is the same as the last record,
-				// There is no further past.
-				if ( past.length < 2 ) {
-					return state;
+				if ( ! past.length ) {
+					break;
 				}
-
-				const newPast = dropRight( past );
 
 				return {
-					past: newPast,
-					present: last( newPast ),
+					past: past.slice( 0, past.length - 1 ),
+					present: past[ past.length - 1 ],
 					future: [ present, ...future ],
 				};
+
 			case 'REDO':
-				// Can't redo if no future.
+				// Can't redo if no future
 				if ( ! future.length ) {
-					return state;
+					break;
 				}
 
 				return {
-					past: [ ...past, first( future ) ],
-					present: first( future ),
-					future: drop( future ),
+					past: [ ...past, present ],
+					present: future[ 0 ],
+					future: future.slice( 1 ),
 				};
 
 			case 'CREATE_UNDO_LEVEL':
-				// Already has this level.
-				if ( last( past ) === present ) {
-					return state;
-				}
-
 				return {
 					past: [ ...past, present ],
 					present,
@@ -89,7 +87,7 @@ export default function withHistory( reducer, options = {} ) {
 
 		if ( includes( resetTypes, action.type ) ) {
 			return {
-				past: [ nextPresent ],
+				past: [],
 				present: nextPresent,
 				future: [],
 			};
@@ -99,16 +97,13 @@ export default function withHistory( reducer, options = {} ) {
 			return state;
 		}
 
-		if ( shouldOverwriteState( action, previousAction ) ) {
-			return {
-				past,
-				present: nextPresent,
-				future,
-			};
+		let nextPast = past;
+		if ( ! shouldReplacePresent( action, previousAction ) ) {
+			nextPast = [ ...nextPast, present ];
 		}
 
 		return {
-			past: [ ...past, present ],
+			past: nextPast,
 			present: nextPresent,
 			future: [],
 		};

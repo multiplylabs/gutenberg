@@ -120,7 +120,7 @@ export const editor = flow( [
 	// Track undo history, starting at editor initialization.
 	partialRight( withHistory, {
 		resetTypes: [ 'SETUP_NEW_POST', 'SETUP_EDITOR' ],
-		shouldOverwriteState( action, previousAction ) {
+		shouldReplacePresent( action, previousAction ) {
 			if ( ! includes( [ 'UPDATE_BLOCK_ATTRIBUTES', 'EDIT_POST', 'RESET_POST' ], action.type ) ) {
 				return false;
 			}
