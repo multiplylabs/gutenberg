@@ -114,7 +114,12 @@ function getEmbedBlockSettings( { title, icon, category = 'embed', transforms, k
 							return;
 						}
 						response.json().then( ( obj ) => {
-							const { html, type } = obj;
+							const { html, type, url, title } = obj;
+							// link type is when oEmbed and OpenGraph failed
+							if ( 'link' === type ) {
+								this.props.onReplace( createBlock( 'core/paragraph', { content: ( <a href={ url }>{ title }</a> ) } ) );
+								return;
+							}
 							if ( html ) {
 								this.setState( { html, type } );
 							} else if ( 'photo' === type ) {
