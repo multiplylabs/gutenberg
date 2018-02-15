@@ -582,8 +582,6 @@ function gutenberg_oembed_fallback_response( $url ) {
  * @return array                      Modifed embed response.
  */
 function gutenberg_oembed_fallback( $response, $handler, $request ) {
-	var_dump($request);
-	die();
 	if ( is_wp_error( $response ) && $response->get_error_code() === 'oembed_invalid_url' ) {
 		$url = $request->get_param( 'url' );
 		$data = gutenberg_oembed_fallback_response( $url );
