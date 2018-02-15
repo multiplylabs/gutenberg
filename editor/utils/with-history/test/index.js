@@ -53,13 +53,12 @@ describe( 'withHistory', () => {
 
 		let state;
 		state = reducer( undefined, {} );
-		state = reducer( state, { type: 'INCREMENT' } );
 		state = reducer( state, { type: 'UNDO' } );
 
 		expect( state ).toEqual( {
 			past: [],
 			present: 0,
-			future: [ 1 ],
+			future: [],
 		} );
 	} );
 
