@@ -114,10 +114,11 @@ function getEmbedBlockSettings( { title, icon, category = 'embed', transforms, k
 							return;
 						}
 						response.json().then( ( obj ) => {
-							const { html, type, url, title } = obj;
+							const { html, type } = obj;
+							const urlTitle = obj.title;
 							// link type is when oEmbed and OpenGraph failed
 							if ( 'link' === type ) {
-								this.props.onReplace( createBlock( 'core/paragraph', { content: ( <a href={ url }>{ title }</a> ) } ) );
+								this.props.onReplace( createBlock( 'core/paragraph', { content: ( <a href={ url }>{ urlTitle }</a> ) } ) );
 								return;
 							}
 							if ( html ) {
