@@ -523,6 +523,7 @@ export class BlockListBlock extends Component {
 				{ shouldShowSettingsMenu && (
 					<BlockSettingsMenu
 						uids={ [ block.uid ] }
+						rootUID={ rootUID }
 						renderBlockMenu={ renderBlockMenu }
 					/>
 				) }
@@ -568,7 +569,13 @@ export class BlockListBlock extends Component {
 							/>,
 						] }
 					</BlockCrashBoundary>
-					{ shouldShowMobileToolbar && <BlockMobileToolbar uid={ block.uid } renderBlockMenu={ renderBlockMenu } /> }
+					{ shouldShowMobileToolbar && (
+						<BlockMobileToolbar
+							rootUID={ rootUID }
+							uid={ block.uid }
+							renderBlockMenu={ renderBlockMenu }
+						/>
+					) }
 				</IgnoreNestedEvents>
 				{ !! error && <BlockCrashWarning /> }
 				{ ! showSideInserter && (
