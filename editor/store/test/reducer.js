@@ -588,37 +588,6 @@ describe( 'state', () => {
 			expect( state.present.blockOrder[ '' ] ).toEqual( [ 'kumquat', 'persimmon', 'loquat' ] );
 		} );
 
-		it( 'should remove associated blocks when deleting a reusable block', () => {
-			const original = editor( undefined, {
-				type: 'RESET_BLOCKS',
-				blocks: [ {
-					uid: 'chicken',
-					name: 'core/test-block',
-					attributes: {},
-					innerBlocks: [],
-				}, {
-					uid: 'ribs',
-					name: 'core/test-block',
-					attributes: {},
-					innerBlocks: [],
-				} ],
-			} );
-			const state = editor( original, {
-				type: 'REMOVE_REUSABLE_BLOCK',
-				id: 123,
-				associatedBlockUids: [ 'chicken', 'veggies' ],
-			} );
-
-			expect( state.present.blockOrder[ '' ] ).toEqual( [ 'ribs' ] );
-			expect( state.present.blocksByUid ).toEqual( {
-				ribs: {
-					uid: 'ribs',
-					name: 'core/test-block',
-					attributes: {},
-				},
-			} );
-		} );
-
 		describe( 'edits()', () => {
 			it( 'should save newly edited properties', () => {
 				const original = editor( undefined, {

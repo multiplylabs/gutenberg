@@ -68,6 +68,22 @@ export function resetBlocks( blocks ) {
 }
 
 /**
+ * Returns an action object used in signalling that blocks have been received.
+ * Unlike resetBlocks, these should be appended to the existing known set, not
+ * replacing.
+ *
+ * @param {Object[]} blocks Array of block objects.
+ *
+ * @return {Object} Action object.
+ */
+export function receiveBlocks( blocks ) {
+	return {
+		type: 'RECEIVE_BLOCKS',
+		blocks,
+	};
+}
+
+/**
  * Returns an action object used in signalling that the block attributes with
  * the specified UID has been updated.
  *
@@ -488,20 +504,18 @@ export function fetchReusableBlocks( id ) {
 }
 
 /**
- * Returns an action object used to insert or update a reusable block into
- * the store.
+ * Returns an action object used in signalling that reusable blocks have been
+ * received. Results is an array of objects containing reusableBlock (details
+ * about reusable persistence) and parsedBlock (the original block).
  *
- * @param {Object} id            The ID of the reusable block to update.
- * @param {Object} reusableBlock The new reusable block object. Any omitted keys
- *                               are not changed.
+ * @param {Object[]} results Reusable blocks received.
  *
  * @return {Object} Action object.
  */
-export function updateReusableBlock( id, reusableBlock ) {
+export function receiveReusableBlocks( results ) {
 	return {
-		type: 'UPDATE_REUSABLE_BLOCK',
-		id,
-		reusableBlock,
+		type: 'RECEIVE_REUSABLE_BLOCKS',
+		results,
 	};
 }
 

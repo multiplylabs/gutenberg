@@ -1,14 +1,15 @@
 /**
  * External dependencies
  */
-import { pickBy, noop } from 'lodash';
+import { noop } from 'lodash';
 import { connect } from 'react-redux';
 
 /**
  * WordPress dependencies
  */
-import { Component } from '@wordpress/element';
+import { Component, compose } from '@wordpress/element';
 import { Placeholder, Spinner } from '@wordpress/components';
+import { query } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -25,12 +26,11 @@ class ReusableBlockEdit extends Component {
 		this.stopEditing = this.stopEditing.bind( this );
 		this.setAttributes = this.setAttributes.bind( this );
 		this.setTitle = this.setTitle.bind( this );
-		this.updateReusableBlock = this.updateReusableBlock.bind( this );
+		this.save = this.save.bind( this );
 
 		this.state = {
 			isEditing: false,
 			title: null,
-			attributes: null,
 		};
 	}
 
@@ -41,64 +41,64 @@ class ReusableBlockEdit extends Component {
 	}
 
 	startEditing() {
-		this.setState( { isEditing: true } );
+		const { reusableBlock } = this.props;
+
+		this.setState( {
+			isEditing: true,
+			title: reusableBlock.title,
+		} );
 	}
 
 	stopEditing() {
 		this.setState( {
 			isEditing: false,
 			title: null,
-			attributes: null,
 		} );
 	}
 
 	setAttributes( attributes ) {
-		this.setState( ( prevState ) => ( {
-			attributes: { ...prevState.attributes, ...attributes },
-		} ) );
+		const { updateAttributes, block } = this.props;
+		updateAttributes( block.uid, attributes );
 	}
 
 	setTitle( title ) {
 		this.setState( { title } );
 	}
 
-	updateReusableBlock() {
-		const { title, attributes } = this.state;
+	save() {
+		const { reusableBlock, onUpdateTitle, onSave } = this.props;
 
-		// Use pickBy to include only changed (assigned) values in payload
-		const payload = pickBy( {
-			title,
-			attributes,
-		} );
+		const { title } = this.state;
+		if ( title !== reusableBlock.title ) {
+			onUpdateTitle( title );
+		}
 
-		this.props.updateReusableBlock( payload );
-		this.props.saveReusableBlock();
+		onSave();
+
 		this.stopEditing();
 	}
 
 	render() {
-		const { isSelected, reusableBlock, isFetching, isSaving } = this.props;
-		const { isEditing, title, attributes } = this.state;
+		const { isSelected, reusableBlock, block, isFetching, isSaving } = this.props;
+		const { isEditing, title } = this.state;
 
 		if ( ! reusableBlock && isFetching ) {
 			return <Placeholder><Spinner /></Placeholder>;
 		}
 
-		if ( ! reusableBlock ) {
+		if ( ! reusableBlock || ! block ) {
 			return <Placeholder>{ __( 'Block has been deleted or is unavailable.' ) }</Placeholder>;
 		}
-
-		const reusableBlockAttributes = { ...reusableBlock.attributes, ...attributes };
 
 		return [
 			// We fake the block being read-only by wrapping it with an element that has pointer-events: none
 			<div key="edit" style={ { pointerEvents: isEditing ? 'auto' : 'none' } }>
 				<BlockEdit
 					{ ...this.props }
-					id={ reusableBlock.uid }
-					name={ reusableBlock.type }
 					isSelected={ isEditing && isSelected }
-					attributes={ reusableBlockAttributes }
+					id={ block.uid }
+					name={ block.name }
+					attributes={ block.attributes }
 					setAttributes={ isEditing ? this.setAttributes : noop }
 				/>
 			</div>,
@@ -110,7 +110,7 @@ class ReusableBlockEdit extends Component {
 					isSaving={ isSaving && ! reusableBlock.isTemporary }
 					onEdit={ this.startEditing }
 					onChangeTitle={ this.setTitle }
-					onSave={ this.updateReusableBlock }
+					onSave={ this.save }
 					onCancel={ this.stopEditing }
 				/>
 			),
@@ -118,7 +118,7 @@ class ReusableBlockEdit extends Component {
 	}
 }
 
-const ConnectedReusableBlockEdit = connect(
+const applyConnect = connect(
 	( state, ownProps ) => ( {
 		reusableBlock: state.reusableBlocks.data[ ownProps.attributes.ref ],
 		isFetching: state.reusableBlocks.isFetching[ ownProps.attributes.ref ],
@@ -131,21 +131,43 @@ const ConnectedReusableBlockEdit = connect(
 				id: ownProps.attributes.ref,
 			} );
 		},
-		updateReusableBlock( reusableBlock ) {
+		onUpdateTitle( title ) {
 			dispatch( {
-				type: 'UPDATE_REUSABLE_BLOCK',
+				type: 'UPDATE_REUSABLE_BLOCK_TITLE',
 				id: ownProps.attributes.ref,
-				reusableBlock,
+				title,
 			} );
 		},
-		saveReusableBlock() {
+		updateAttributes( uid, attributes ) {
+			dispatch( {
+				type: 'UPDATE_BLOCK_ATTRIBUTES',
+				uid,
+				attributes,
+			} );
+		},
+		onSave() {
 			dispatch( {
 				type: 'SAVE_REUSABLE_BLOCK',
 				id: ownProps.attributes.ref,
 			} );
 		},
 	} )
-)( ReusableBlockEdit );
+);
+
+const applyQuery = query( ( select, ownProps ) => {
+	const props = {};
+
+	if ( ownProps.reusableBlock ) {
+		props.block = select( 'core/editor' ).getBlock( ownProps.reusableBlock.uid );
+	}
+
+	return props;
+} );
+
+const EnhancedReusableBlockEdit = compose( [
+	applyConnect,
+	applyQuery,
+] )( ReusableBlockEdit );
 
 export const name = 'core/block';
 
@@ -165,6 +187,6 @@ export const settings = {
 		html: false,
 	},
 
-	edit: ConnectedReusableBlockEdit,
+	edit: EnhancedReusableBlockEdit,
 	save: () => null,
 };
