@@ -20,7 +20,7 @@ import {
 	isReusableBlock,
 	isUnmodifiedDefaultBlock,
 } from '@wordpress/blocks';
-import { withFilters, withContext, withAPIData } from '@wordpress/components';
+import { withFilters, withAPIData } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 /**
@@ -763,13 +763,6 @@ BlockListBlock.childContextTypes = {
 
 export default compose(
 	connect( mapStateToProps, mapDispatchToProps ),
-	withContext( 'editor' )( ( settings ) => {
-		const { templateLock } = settings;
-
-		return {
-			isLocked: !! templateLock,
-		};
-	} ),
 	withFilters( 'editor.BlockListBlock' ),
 	withAPIData( ( { postType } ) => ( {
 		user: `/wp/v2/users/me?post_type=${ postType }&context=edit`,

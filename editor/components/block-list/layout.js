@@ -17,7 +17,8 @@ import 'element-closest';
 /**
  * WordPress dependencies
  */
-import { Component } from '@wordpress/element';
+import { Component, compose } from '@wordpress/element';
+import { withContext } from '@wordpress/components';
 
 /**
  * Internal dependencies
@@ -200,6 +201,7 @@ class BlockListLayout extends Component {
 			showContextualToolbar,
 			layout,
 			isGroupedByLayout,
+			isLocked,
 			rootUID,
 			renderBlockMenu,
 		} = this.props;
@@ -228,42 +230,51 @@ class BlockListLayout extends Component {
 						layout={ defaultLayout }
 						isFirst={ blockIndex === 0 }
 						isLast={ blockIndex === blockUIDs.length - 1 }
+						isLocked={ isLocked }
 						renderBlockMenu={ renderBlockMenu }
 					/>
 				) ) }
-				<DefaultBlockAppender
+				{ ! isLocked && <DefaultBlockAppender
 					rootUID={ rootUID }
 					lastBlockUID={ last( blockUIDs ) }
 					layout={ defaultLayout }
-				/>
+				/> }
 			</BlockSelectionClearer>
 		);
 	}
 }
+export default compose(
+	connect(
+		( state ) => ( {
+			// Reference block selection value directly, since current selectors
+			// assume either multi-selection (getMultiSelectedBlocksStartUid) or
+			// singular-selection (getSelectedBlock) exclusively.
+			selectionStart: getMultiSelectedBlocksStartUid( state ),
+			selectionEnd: getMultiSelectedBlocksEndUid( state ),
+			selectionStartUID: state.blockSelection.start,
+			isSelectionEnabled: isSelectionEnabled( state ),
+			isMultiSelecting: isMultiSelecting( state ),
+		} ),
+		( dispatch ) => ( {
+			onStartMultiSelect() {
+				dispatch( startMultiSelect() );
+			},
+			onStopMultiSelect() {
+				dispatch( stopMultiSelect() );
+			},
+			onMultiSelect( start, end ) {
+				dispatch( multiSelect( start, end ) );
+			},
+			onSelect( uid ) {
+				dispatch( selectBlock( uid ) );
+			},
+		} )
+	),
+	withContext( 'editor' )( ( settings ) => {
+		const { templateLock } = settings;
 
-export default connect(
-	( state ) => ( {
-		// Reference block selection value directly, since current selectors
-		// assume either multi-selection (getMultiSelectedBlocksStartUid) or
-		// singular-selection (getSelectedBlock) exclusively.
-		selectionStart: getMultiSelectedBlocksStartUid( state ),
-		selectionEnd: getMultiSelectedBlocksEndUid( state ),
-		selectionStartUID: state.blockSelection.start,
-		isSelectionEnabled: isSelectionEnabled( state ),
-		isMultiSelecting: isMultiSelecting( state ),
+		return {
+			isLocked: !! templateLock,
+		};
 	} ),
-	( dispatch ) => ( {
-		onStartMultiSelect() {
-			dispatch( startMultiSelect() );
-		},
-		onStopMultiSelect() {
-			dispatch( stopMultiSelect() );
-		},
-		onMultiSelect( start, end ) {
-			dispatch( multiSelect( start, end ) );
-		},
-		onSelect( uid ) {
-			dispatch( selectBlock( uid ) );
-		},
-	} )
 )( BlockListLayout );
