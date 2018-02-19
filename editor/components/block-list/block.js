@@ -30,6 +30,7 @@ import {
 	getScrollContainer,
 	placeCaretAtHorizontalEdge,
 	placeCaretAtVerticalEdge,
+	isEditableNode,
 } from '../../utils/dom';
 import BlockMover from '../block-mover';
 import BlockDropZone from '../block-drop-zone';
@@ -107,6 +108,7 @@ export class BlockListBlock extends Component {
 			error: null,
 			isHovered: false,
 			isSelectionCollapsed: true,
+			hasEditableContent: false,
 		};
 	}
 
@@ -136,6 +138,8 @@ export class BlockListBlock extends Component {
 		if ( this.props.isSelected ) {
 			this.focusTabbable();
 		}
+
+		this.updateHasEditableContent();
 	}
 
 	componentWillReceiveProps( newProps ) {
@@ -164,6 +168,8 @@ export class BlockListBlock extends Component {
 			this.previousOffset = null;
 		}
 
+		this.updateHasEditableContent();
+
 		// Bind or unbind mousemove from page when user starts or stops typing
 		if ( this.props.isTyping !== prevProps.isTyping ) {
 			if ( this.props.isTyping ) {
@@ -185,6 +191,14 @@ export class BlockListBlock extends Component {
 
 	removeStopTypingListener() {
 		document.removeEventListener( 'mousemove', this.stopTypingOnMouseMove );
+	}
+
+	updateHasEditableContent() {
+		// Update the hasEditableContent property
+		const hasEditableContent = !! this.node.querySelector( 'input,textarea,[contenteditable=true]' );
+		if ( this.state.hasEditableContent !== hasEditableContent ) {
+			this.setState( { hasEditableContent } );
+		}
 	}
 
 	setBlockListRef( node ) {
@@ -218,8 +232,7 @@ export class BlockListBlock extends Component {
 		}
 
 		// Find all tabbables within node.
-		const tabbables = focus.tabbable.find( this.node )
-			.filter( ( node ) => node !== this.node );
+		const tabbables = focus.tabbable.find( this.node ).filter( isEditableNode );
 
 		// If reversed (e.g. merge via backspace), use the last in the set of
 		// tabbables.
@@ -521,6 +534,7 @@ export class BlockListBlock extends Component {
 			isFirstMultiSelected,
 			isLastInSelection,
 		} = this.props;
+		const { error, hasEditableContent } = this.state;
 		const isHovered = this.state.isHovered && ! this.props.isMultiSelecting;
 		const { name: blockName, isValid } = block;
 		const blockType = getBlockType( blockName );
@@ -539,8 +553,6 @@ export class BlockListBlock extends Component {
 		const shouldShowSettingsMenu = shouldShowMovers;
 		const shouldShowContextualToolbar = shouldAppearSelected && isValid && showContextualToolbar;
 		const shouldShowMobileToolbar = shouldAppearSelected;
-		const { error } = this.state;
-
 		// Insertion point can only be made visible when the side inserter is
 		// not present, and either the block is at the extent of a selection or
 		// is the last block in the top-level list rendering.
@@ -553,6 +565,7 @@ export class BlockListBlock extends Component {
 			'is-multi-selected': isMultiSelected,
 			'is-hovered': isHovered,
 			'is-reusable': isReusableBlock( blockType ),
+			'has-editable-content': hasEditableContent,
 		} );
 
 		const { onReplace } = this.props;

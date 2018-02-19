@@ -21,6 +21,7 @@ import {
 	isVerticalEdge,
 	placeCaretAtHorizontalEdge,
 	placeCaretAtVerticalEdge,
+	isEditableNode,
 } from '../../utils/dom';
 import {
 	getPreviousBlockUid,
@@ -75,12 +76,9 @@ class WritingFlow extends Component {
 	getVisibleTabbables() {
 		return focus.tabbable
 			.find( this.container )
-			.filter( ( node ) => (
-				node.nodeName === 'INPUT' ||
-				node.nodeName === 'TEXTAREA' ||
-				node.contentEditable === 'true' ||
-				node.classList.contains( 'editor-block-list__block-edit' )
-			) );
+			.filter( ( node ) =>
+				isEditableNode( node ) || node.classList.contains( 'editor-block-list__block-edit' )
+			);
 	}
 
 	getClosestTabbable( target, isReverse ) {
