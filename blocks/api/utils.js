@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { every, keys, isEqual } from 'lodash';
+import { every, keys, isEqual, without } from 'lodash';
 
 /**
  * Internal dependencies
@@ -25,10 +25,11 @@ export function isUnmodifiedDefaultBlock( block ) {
 	}
 
 	const newDefaultBlock = createBlock( defaultBlockName );
-	const attributeKeys = [
+	// Omit the layout attribute because it's a special attribute used for nested blocks.
+	const attributeKeys = without( [
 		...keys( newDefaultBlock.attributes ),
 		...keys( block.attributes ),
-	];
+	], 'layout' );
 
 	return every( attributeKeys, key =>
 		isEqual( newDefaultBlock.attributes[ key ], block.attributes[ key ] )

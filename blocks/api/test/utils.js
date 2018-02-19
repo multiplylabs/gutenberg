@@ -39,6 +39,28 @@ describe( 'block helpers', () => {
 			expect( isUnmodifiedDefaultBlock( unmodifiedBlock ) ).toBe( true );
 		} );
 
+		it( 'should return true ignoring the layout attribute', () => {
+			registerBlockType( 'core/test-block', {
+				attributes: {
+					align: {
+						type: 'string',
+					},
+					includesDefault: {
+						type: 'boolean',
+						default: true,
+					},
+				},
+				save: noop,
+				category: 'common',
+				title: 'test block',
+			} );
+			setDefaultBlockName( 'core/test-block' );
+			const unmodifiedBlock = createBlock( 'core/test-block' );
+			unmodifiedBlock.attributes.layout = 'column';
+
+			expect( isUnmodifiedDefaultBlock( unmodifiedBlock ) ).toBe( true );
+		} );
+
 		it( 'should return false if the default block is updated', () => {
 			registerBlockType( 'core/test-block', {
 				attributes: {
