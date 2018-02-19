@@ -50,7 +50,6 @@ export const settings = {
 
 		return (
 			<TableBlock
-				key="editor"
 				onChange={ ( nextContent ) => {
 					setAttributes( { content: nextContent } );
 				} }
