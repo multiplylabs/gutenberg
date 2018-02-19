@@ -290,14 +290,16 @@ export default {
 		if ( post.content.raw ) {
 			blocks = parse( post.content.raw );
 		} else if ( settings.template ) {
-			blocks = map( settings.template, ( [ name, attributes ] ) => {
-				const block = createBlock( name );
-				block.attributes = {
-					...block.attributes,
-					...attributes,
-				};
-				return block;
-			} );
+			const createBlocksFromTemplate = ( template ) => {
+				return map( template, ( [ name, attributes, subTemplate ] ) => {
+					return createBlock(
+						name,
+						attributes,
+						createBlocksFromTemplate( subTemplate )
+					);
+				} );
+			};
+			blocks = createBlocksFromTemplate( settings.template );
 		} else {
 			blocks = [];
 		}
